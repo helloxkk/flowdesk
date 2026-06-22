@@ -1,4 +1,14 @@
-# Barrier
+# FlowDesk
+
+> **Fork notice:** FlowDesk is a fork of [Barrier](https://github.com/debauchee/barrier)
+> (which itself was forked from Symless's Synergy 1.9 codebase).
+> All upstream copyright notices and the GPLv2 license are preserved unchanged
+> in the [`LICENSE`](LICENSE) file and source headers. See the `## Acknowledgements`
+> section below. The original Barrier README continues below under the horizontal rule.
+
+---
+
+# Barrier *(upstream README, preserved)*
 
 Eliminate the barrier between your machines.
 Find [releases for windows and macOS here](https://github.com/debauchee/barrier/releases).
@@ -146,3 +156,22 @@ __Q: Is it possible to use Barrier on Mac OS X / OS X versions prior to 10.12?__
 >      - *(see [#109](https://github.com/debauchee/barrier/issues/109) and [#1251](https://github.com/debauchee/barrier/issues/1251) for status or to volunteer your talents)*
 >
 > The complete list of open issues can be found in the ['Issues' tab on GitHub](https://github.com/debauchee/barrier/issues?q=is%3Aissue+is%3Aopen). Help is always appreciated.
+
+---
+
+## Acknowledgements
+
+FlowDesk is a derivative of [Barrier](https://github.com/debauchee/barrier) and
+would not exist without the work of its contributors, and before them the
+[Synergy](https://github.com/symless/synergy-core) project and the original
+CosmoSynergy by Chris Schoeneman.
+
+This project is licensed under the **GNU General Public License v2** (see
+[`LICENSE`](LICENSE)). As required by the GPLv2, the upstream copyright notices
+are preserved verbatim, and this derivative is distributed under the same
+license. Upstream copyright holders include:
+
+- Copyright (C) 2018 Debauchee Open Source Group
+- Copyright (C) 2012-2016 Symless Ltd.
+- Copyright (C) 2008-2014 Nick Bolton
+- Copyright (C) 2002-2014 Chris Schoeneman
