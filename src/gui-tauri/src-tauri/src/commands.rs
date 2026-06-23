@@ -38,7 +38,7 @@ pub async fn start_server(
     // before serializing it for barriers to consume.
     config.server_config.reconcile();
 
-    let binary = crate::supervisor::default_binary();
+    let binary = crate::supervisor::resolve_binary(&app);
     let server_path = crate::settings::server_config_path();
 
     // Persist the current server config to disk so barriers can read it.

@@ -466,24 +466,52 @@ pub fn build_server_args(config: &AppConfig, server_config_path: &str) -> Vec<St
 }
 
 /// Default guess for where the compiled barriers binary lives.
-fn default_binary_path() -> String {
-    // In dev, `cargo run` starts from src-tauri/, so the repo-root build dir
-    // is three levels up: src-tauri → gui-tauri → flowdesk → build.
-    let candidates = [
-        "../../../build/bin/barriers", // dev, relative to src-tauri
-        "/Applications/FlowDesk.app/Contents/MacOS/barriers", // bundled (future)
-        "/Applications/Barrier.app/Contents/MacOS/barriers",  // legacy fallback
+///
+/// Lookup order (for the no-AppHandle case):
+/// 1. Dev path (cargo run from src-tauri/ → three levels up to repo root).
+/// 2. Legacy Barrier.app install.
+/// For the production-bundled case, use `resolve_binary(app)` instead, which
+/// consults Tauri's resource_dir.
+pub fn default_binary_path() -> String {
+    // 1. Dev path (cargo run from src-tauri/ → three levels up to repo root).
+    let dev_candidates = [
+        "../../../build/bin/barriers",
+        "../../build/bin/barriers",
     ];
-    for c in candidates {
+    for c in dev_candidates {
         if std::path::Path::new(c).exists() {
             return c.into();
         }
     }
+
+    // 2. Legacy Barrier.app install.
+    let app_candidates = [
+        "/Applications/FlowDesk.app/Contents/Resources/bin/barriers",
+        "/Applications/Barrier.app/Contents/MacOS/barriers",
+    ];
+    for c in app_candidates {
+        if std::path::Path::new(c).exists() {
+            return c.into();
+        }
+    }
+
     // Last resort: hope barriers is on PATH.
     "barriers".into()
 }
 
-/// Re-export for use by commands.rs when auto-launching on startup.
-pub fn default_binary() -> String {
+/// Resolve the barriers binary using the live AppHandle, which lets us find
+/// the bundled resource in production. This is the preferred entry point.
+pub fn resolve_binary<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> String {
+    use tauri::Manager;
+
+    // Production: resource_dir()/bin/barriers inside the .app bundle.
+    if let Ok(dir) = app.path().resource_dir() {
+        let candidate = dir.join("bin").join("barriers");
+        if candidate.exists() {
+            return candidate.to_string_lossy().into_owned();
+        }
+    }
+
+    // Fallback to the static resolver (dev paths, legacy installs).
     default_binary_path()
 }
