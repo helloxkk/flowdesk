@@ -14,6 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+# Skip the bundled-gtest setup entirely when tests are off. CMake 4.x rejects
+# add_library with no sources, so the unconditional include would otherwise
+# break configuration. Guarded so a no-tests build doesn't need gtest sources.
+if (NOT BARRIER_BUILD_TESTS)
+    return()
+endif()
+
 if (BARRIER_USE_EXTERNAL_GTEST)
     include (FindPkgConfig)
     find_package(GTest REQUIRED)
