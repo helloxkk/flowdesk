@@ -413,10 +413,10 @@ pub fn build_server_args(config: &AppConfig, server_config_path: &str) -> Vec<St
 
 /// Default guess for where the compiled barriers binary lives.
 fn default_binary_path() -> String {
-    // Walk up from the tauri source dir to the repo root's build/bin.
-    // In dev we run from src/gui-tauri/src-tauri; production uses a bundled copy.
+    // In dev, `cargo run` starts from src-tauri/, so the repo-root build dir
+    // is three levels up: src-tauri → gui-tauri → flowdesk → build.
     let candidates = [
-        "../../build/bin/barriers", // dev, relative to src-tauri
+        "../../../build/bin/barriers", // dev, relative to src-tauri
         "/Applications/FlowDesk.app/Contents/MacOS/barriers", // bundled (future)
         "/Applications/Barrier.app/Contents/MacOS/barriers",  // legacy fallback
     ];

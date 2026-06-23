@@ -26,16 +26,22 @@ mod inner {
     /// If `prompt` is true, macOS opens System Settings → Privacy →
     /// Accessibility the first time (matches the legacy GUI behaviour).
     pub fn is_trusted(prompt: bool) -> bool {
+        if !prompt {
+            // No-prompt query: pass NULL options.
+            return unsafe { AXIsProcessTrustedWithOptions(std::ptr::null_mut()) != 0 };
+        }
+
+        // Build a minimal CFDictionary { AXTrustedCheckOptionPrompt: true }
+        // via the C CoreFoundation API. We avoid CFBooleanCreate (its symbol
+        // is fragile across SDK versions) by reusing kCFBooleanTrue, which is
+        // a global constant exported by CoreFoundation.
         unsafe {
-            // Build a minimal CFDictionary { AXTrustedCheckOptionPrompt: prompt }
-            // using the C CoreFoundation API directly. We avoid pulling in the
-            // core-foundation crate to keep the dependency footprint small.
             let key = cf_string_create(AX_TRUSTED_CHECK_OPTION_PROMPT);
             if key.is_null() {
                 // Fall back to no prompt if we couldn't create the key.
                 return AXIsProcessTrustedWithOptions(std::ptr::null_mut()) != 0;
             }
-            let val = cf_boolean_create(prompt);
+            let val: *const c_void = kCFBooleanTrue;
 
             let keys = [key as *const c_void];
             let vals = [val as *const c_void];
@@ -44,8 +50,8 @@ mod inner {
             let trusted = AXIsProcessTrustedWithOptions(opts as *mut c_void);
 
             cf_release(opts as *const c_void);
-            cf_release(val as *const c_void);
             cf_release(key as *const c_void);
+            // kCFBooleanTrue is a global constant — do NOT release it.
 
             trusted != 0
         }
@@ -58,7 +64,6 @@ mod inner {
             cstr: *const c_char,
             encoding: u32,
         ) -> *mut c_void;
-        fn CFBooleanCreate(alloc: *mut c_void, value: c_int) -> *mut c_void;
         fn CFDictionaryCreate(
             alloc: *mut c_void,
             keys: *const *const c_void,
@@ -68,6 +73,9 @@ mod inner {
             value_callbacks: *const c_void,
         ) -> *mut c_void;
         fn CFRelease(cf: *const c_void);
+        // kCFBooleanTrue is a global constant of type CFBooleanRef exported
+        // by CoreFoundation. We access it as an extern static.
+        static kCFBooleanTrue: *const c_void;
     }
 
     // kCFStringEncodingUTF8
@@ -76,10 +84,6 @@ mod inner {
     unsafe fn cf_string_create(s: &str) -> *mut c_void {
         let c = std::ffi::CString::new(s).unwrap();
         CFStringCreateWithCString(std::ptr::null_mut(), c.as_ptr(), K_CF_STRING_ENCODING_UTF8)
-    }
-
-    unsafe fn cf_boolean_create(b: bool) -> *mut c_void {
-        CFBooleanCreate(std::ptr::null_mut(), b as c_int)
     }
 
     unsafe fn cf_dictionary_create(keys: &[*const c_void], vals: &[*const c_void]) -> *mut c_void {
