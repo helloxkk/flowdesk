@@ -1,0 +1,221 @@
+:root {
+  --bg: #f5f5f7;
+  --panel: #ffffff;
+  --border: #d2d2d7;
+  --text: #1d1d1f;
+  --muted: #6e6e73;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --danger: #d70015;
+  --success: #1d8a3d;
+  --warning: #b25000;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue",
+    Arial, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1c1c1e;
+    --panel: #2c2c2e;
+    --border: #3a3a3c;
+    --text: #f5f5f7;
+    --muted: #98989d;
+    --accent: #0a84ff;
+    --accent-hover: #409cff;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+}
+
+button {
+  font: inherit;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 16px;
+  cursor: pointer;
+}
+button:hover {
+  background: var(--accent-hover);
+}
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+button.secondary {
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+button.danger {
+  background: var(--danger);
+}
+
+input,
+select {
+  font: inherit;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 8px;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 16px;
+  gap: 12px;
+}
+
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dot.stopped { background: var(--muted); }
+.dot.starting { background: var(--warning); }
+.dot.connected { background: var(--success); }
+.dot.disconnected { background: var(--warning); }
+.dot.error { background: var(--danger); }
+
+.log {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.log-line.ERROR { color: var(--danger); }
+.log-line.WARNING { color: var(--warning); }
+.log-line.NOTE { color: var(--accent); }
+.log-line.DEBUG { color: var(--muted); }
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+}
+.tab {
+  padding: 6px 14px;
+  background: transparent;
+  color: var(--text);
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  cursor: pointer;
+}
+.tab.active {
+  border-bottom-color: var(--accent);
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  overflow-y: auto;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+}
+.field label {
+  width: 130px;
+  color: var(--muted);
+}
+.field input,
+.field select {
+  flex: 1;
+}
+
+.grid {
+  display: grid;
+  gap: 6px;
+  user-select: none;
+}
+.grid-cell {
+  background: var(--bg);
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  min-height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: var(--muted);
+  cursor: pointer;
+  position: relative;
+  padding: 4px;
+  text-align: center;
+}
+.grid-cell.filled {
+  background: var(--panel);
+  border-style: solid;
+  border-color: var(--accent);
+  color: var(--text);
+  font-weight: 500;
+}
+.grid-cell.server {
+  background: color-mix(in srgb, var(--accent) 12%, var(--panel));
+}
+.grid-cell.selected {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+.grid-cell.drag-over {
+  background: color-mix(in srgb, var(--accent) 20%, var(--bg));
+}
+
+.palette {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.palette-item {
+  padding: 8px 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: grab;
+  font-size: 12px;
+}
+.palette-item:active {
+  cursor: grabbing;
+}

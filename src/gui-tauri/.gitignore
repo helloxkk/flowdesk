@@ -1,0 +1,11 @@
+# Tauri GUI build artifacts
+node_modules/
+dist/
+src-tauri/target/
+src-tauri/gen/
+src-tauri/Cargo.lock
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/
