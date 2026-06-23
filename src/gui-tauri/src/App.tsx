@@ -5,10 +5,10 @@ import type { AppConfig, FingerprintPrompt, LogLine, ServerConfig, ServerState }
 import { LogPanel } from "./components/LogPanel";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { ScreenGrid } from "./components/ScreenGrid";
-import { AccessibilityBanner } from "./components/AccessibilityBanner";
+import { PermissionGuide } from "./components/PermissionGuide";
 import { FingerprintDialog } from "./components/FingerprintDialog";
 
-type Tab = "main" | "screens" | "settings";
+type Tab = "main" | "screens" | "permissions" | "settings";
 
 export default function App() {
   const [state, setState] = useState<ServerState>("stopped");
@@ -62,6 +62,20 @@ export default function App() {
     listen<FingerprintPrompt>("fingerprint://prompt", (e) =>
       setFingerprint(e.payload)
     ).then((u) => unsubs.push(u));
+
+    // When barriers reports capture failure, jump to the permissions tab so
+    // the user sees exactly what's missing.
+    listen("permission://needed", () => setTab("permissions")).then((u) =>
+      unsubs.push(u)
+    );
+
+    // On first load, if permissions are missing, default to the permissions
+    // tab so the user is guided there immediately.
+    Promise.all([api.checkAccessibility(), api.checkScreenCapture()])
+      .then(([acc, scr]) => {
+        if (!acc || !scr) setTab("permissions");
+      })
+      .catch(() => {});
 
     // Tray menu actions (Start/Stop/Show Log from the system-tray menu).
     listen<string>("tray://action", (e) => {
@@ -134,7 +148,6 @@ export default function App() {
 
   return (
     <div className="app">
-      <AccessibilityBanner />
       <div className="status-bar">
         <span className={`dot ${state}`} />
         <strong style={{ flex: 1 }}>
@@ -165,6 +178,12 @@ export default function App() {
           Screens
         </button>
         <button
+          className={`tab ${tab === "permissions" ? "active" : ""}`}
+          onClick={() => setTab("permissions")}
+        >
+          权限
+        </button>
+        <button
           className={`tab ${tab === "settings" ? "active" : ""}`}
           onClick={() => setTab("settings")}
         >
@@ -186,6 +205,7 @@ export default function App() {
           onSave={onSaveServerConfig}
         />
       )}
+      {tab === "permissions" && <PermissionGuide />}
       {tab === "settings" && (
         <SettingsPanel config={config} onSave={onSaveAppConfig} />
       )}
