@@ -127,7 +127,7 @@ impl Supervisor {
         let args = build_server_args(&config, &server_config_path);
         log::info!("starting {} with args: {:?}", binary_path, args);
 
-        let mut cmd = Command::new(&binary_path);
+        let mut cmd = server_command(&binary_path);
         cmd.args(&args)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -465,6 +465,34 @@ pub fn build_server_args(config: &AppConfig, server_config_path: &str) -> Vec<St
     args
 }
 
+fn server_command(binary_path: &str) -> Command {
+    #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+    {
+        if binary_supports_arch(binary_path, "x86_64") {
+            let mut cmd = Command::new("/usr/bin/arch");
+            cmd.arg("-x86_64").arg(binary_path);
+            return cmd;
+        }
+    }
+
+    Command::new(binary_path)
+}
+
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+fn binary_supports_arch(binary_path: &str, arch: &str) -> bool {
+    let output = std::process::Command::new("lipo")
+        .arg("-archs")
+        .arg(binary_path)
+        .output();
+
+    match output {
+        Ok(output) if output.status.success() => {
+            String::from_utf8_lossy(&output.stdout).split_whitespace().any(|a| a == arch)
+        }
+        _ => false,
+    }
+}
+
 /// Default guess for where the compiled barriers binary lives.
 ///
 /// Lookup order (for the no-AppHandle case):
@@ -475,6 +503,8 @@ pub fn build_server_args(config: &AppConfig, server_config_path: &str) -> Vec<St
 pub fn default_binary_path() -> String {
     // 1. Dev path (cargo run from src-tauri/ → three levels up to repo root).
     let dev_candidates = [
+        "../../../build/flowdesk-helper/bin/barriers",
+        "../../build/flowdesk-helper/bin/barriers",
         "../../../build/bin/barriers",
         "../../build/bin/barriers",
     ];

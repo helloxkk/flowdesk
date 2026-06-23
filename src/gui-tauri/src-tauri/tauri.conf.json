@@ -4,9 +4,9 @@
   "version": "0.1.0",
   "identifier": "com.flowdesk.app",
   "build": {
-    "beforeDevCommand": "npm run dev",
+    "beforeDevCommand": "npm run build:core && npm run dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "npm run build",
+    "beforeBuildCommand": "npm run build:bundle",
     "frontendDist": "../dist"
   },
   "app": {
@@ -32,7 +32,7 @@
     "active": true,
     "targets": ["app", "dmg"],
     "resources": {
-      "../../../build/bin/barriers": "bin/barriers"
+      "../../../build/flowdesk-helper/bin/barriers": "bin/barriers"
     },
     "icon": [
       "icons/32x32.png",
@@ -45,7 +45,11 @@
     "shortDescription": "FlowDesk",
     "longDescription": "FlowDesk — software KVM utility, a fork of Barrier.",
     "macOS": {
-      "minimumSystemVersion": "10.15"
+      "minimumSystemVersion": "10.15",
+      "infoPlist": "Info.plist",
+      "files": {
+        "Helpers/bin/barriers": "../../../build/flowdesk-helper/bin/barriers"
+      }
     }
   }
 }

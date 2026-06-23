@@ -32,6 +32,14 @@ cp "$SRC" "$DST"
 chmod +x "$DST"
 echo "post-bundle: copied barriers to $DST"
 
+if [[ "$(uname -s)" == "Darwin" && "$(uname -m)" == "arm64" ]]; then
+    if ! lipo -archs "$DST" 2>/dev/null | grep -qw x86_64; then
+        echo "post-bundle: bundled barriers must contain x86_64 for smooth macOS server input" >&2
+        file "$DST" >&2 || true
+        exit 1
+    fi
+fi
+
 # Remove any stale MacOS/bin copy from a prior layout (avoids Dock dup icon).
 if [[ -f "$APP_BUNDLE/Contents/MacOS/bin/barriers" ]]; then
     rm -f "$APP_BUNDLE/Contents/MacOS/bin/barriers"

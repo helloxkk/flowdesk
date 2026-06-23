@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Copyright (C) 2026 helloxkk (FlowDesk)
+  Licensed under GPLv2.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>NSAppleEventsUsageDescription</key>
+  <string>FlowDesk needs Accessibility permission to share your keyboard and mouse across computers.</string>
+  <key>NSScreenCaptureUsageDescription</key>
+  <string>FlowDesk needs Screen Recording permission to track the mouse position for seamless cursor movement between screens.</string>
+</dict>
+</plist>

@@ -15,7 +15,8 @@ use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
 
 fn barriers_binary() -> Option<PathBuf> {
-    let candidates: [&str; 3] = [
+    let candidates: [&str; 4] = [
+        "../../../build/flowdesk-helper/bin/barriers",
         "../../../build/bin/barriers",
         "/Applications/Barrier.app/Contents/MacOS/barriers",
         "barriers",
