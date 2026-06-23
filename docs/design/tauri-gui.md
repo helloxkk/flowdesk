@@ -1,9 +1,12 @@
 # FlowDesk Tauri GUI 设计文档
 
-**状态:** Draft(待用户审阅)
+**状态:** Approved(用户已确认核心决策,Phase 0 可启动)
 **日期:** 2026-06-23
 **作者:** helloxkk(基于代码探路产出)
 **范围:** macOS,服务端模式优先
+**前端:** React
+**设置存储:** JSON
+**Bundle ID:** `com.flowdesk.app`
 
 ---
 
@@ -80,12 +83,12 @@ flowdesk/
           supervisor.rs    # 进程监督子模块
           config.rs        # barrier 文本配置生成
           logparse.rs      # stdout 状态/指纹解析
-          settings.rs      # 应用设置持久化
+          settings.rs      # 应用设置持久化(JSON)
           commands.rs      # Tauri command(invokable from JS)
         icons/
-        tauri.conf.json
+        tauri.conf.json    # bundle id: com.flowdesk.app
         entitlements.plist
-      src/            # 前端(JS/TS)
+      src/            # 前端(React + TypeScript + Vite)
       package.json
       vite.config.ts
   build/              # C++ 构建产物(不变)
@@ -243,13 +246,13 @@ enum LogEvent {
 
 ### 3.4 设置持久化(settings.rs)
 
-**沿用现有 macOS 路径约定**(为了兼容老用户的习惯性位置):
+**沿用 macOS 配置目录约定,但用 JSON 格式(非 Qt 私有 plist):**
 
 ```
-~/Library/Preferences/com.github.helloxkk.FlowDesk.plist
+~/Library/Application Support/com.flowdesk.app/config.json
 ```
 
-**用 Rust 序列化为 JSON 或 plist。** 不复用 Qt 的 `QSettings` 二进制 plist 格式
+**用 Rust serde 序列化为 JSON。** 不复用 Qt 的 `QSettings` 二进制 plist 格式
 (那是 Qt 私有结构)。首版可读老配置是 Phase 4 的事;首版直接用新格式。
 
 **键名设计(对齐现有 AppConfig,便于迁移):**
@@ -453,12 +456,16 @@ struct AppConfig {
 
 ---
 
-## 8. 待用户确认项
+## 8. 决策结论(已确认)
 
-1. **前端框架选择:** React / Svelte / Vue / SolidJS?(我倾向 React 或 Svelte)
-2. **设置存储格式:** JSON / plist / TOML?(我倾向 plist,贴近 macOS 习惯)
-3. **应用 Bundle ID:** `com.helloxkk.flowdesk` 是否合适?
-4. **是否需要在 Phase 1 就接辅助功能权限检查**,还是先跳过让 Phase 4 统一处理?
-5. **C++ 核心构建产物路径:** 用 `build/bin/barriers`,还是固定一个 `dist/bin/` 路径?
-6. **网格编辑器若 Phase 3 卡住**,是否接受降级为列表式编辑器?
-7. **设计文档本身** 是否需要补充其它内容?
+| # | 决策项 | 选择 | 备注 |
+|---|--------|------|------|
+| C1 | 前端框架 | **React** | TypeScript + Vite,Tauri 官方默认栈,拖拽生态成熟 |
+| C2 | 设置存储格式 | **JSON** | 路径 `~/Library/Application Support/com.flowdesk.app/config.json` |
+| C3 | Bundle ID | **`com.flowdesk.app`** | 影响 plist 路径、签名、托盘标识 |
+| C4 | 辅助功能权限检查 | Phase 1 集成(默认) | 服务端模式也需捕获鼠标,权限不通 barriers 跑不起来 |
+| C5 | C++ 核心产物路径 | `build/bin/barriers` | Phase 0 配置 Tauri 脚本引用该路径,后续考虑固定 `dist/bin/` |
+| C6 | 网格编辑器卡住的降级 | 接受降级为列表式 | Phase 3 若 3 天无突破,降级并记入风险 |
+| C7 | 设计文档补充 | 暂无 | Phase 推进中按需补充 ADR |
+
+**生效条件:** 本节填齐即视为 Phase 0 启动许可。
