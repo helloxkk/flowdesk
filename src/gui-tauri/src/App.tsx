@@ -1,10 +1,12 @@
 import { useEffect, useState, useCallback } from "react";
 import { listen } from "@tauri-apps/api/event";
 import * as api from "./api";
-import type { AppConfig, LogLine, ServerConfig, ServerState } from "./types";
+import type { AppConfig, FingerprintPrompt, LogLine, ServerConfig, ServerState } from "./types";
 import { LogPanel } from "./components/LogPanel";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { ScreenGrid } from "./components/ScreenGrid";
+import { AccessibilityBanner } from "./components/AccessibilityBanner";
+import { FingerprintDialog } from "./components/FingerprintDialog";
 
 type Tab = "main" | "screens" | "settings";
 
@@ -16,6 +18,7 @@ export default function App() {
   const [serverCfg, setServerCfg] = useState<ServerConfig | null>(null);
   const [localIps, setLocalIps] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const [fingerprint, setFingerprint] = useState<FingerprintPrompt | null>(null);
 
   const refreshStatus = useCallback(async () => {
     try {
@@ -53,6 +56,26 @@ export default function App() {
         // Cap log buffer to avoid runaway memory.
         return next.length > 5000 ? next.slice(-5000) : next;
       });
+    }).then((u) => unsubs.push(u));
+
+    // TLS fingerprint trust prompt from the core.
+    listen<FingerprintPrompt>("fingerprint://prompt", (e) =>
+      setFingerprint(e.payload)
+    ).then((u) => unsubs.push(u));
+
+    // Tray menu actions (Start/Stop/Show Log from the system-tray menu).
+    listen<string>("tray://action", (e) => {
+      switch (e.payload) {
+        case "start":
+          onStart();
+          break;
+        case "stop":
+          onStop();
+          break;
+        case "show-log":
+          setTab("main"); // Log panel always visible on the main tab.
+          break;
+      }
     }).then((u) => unsubs.push(u));
 
     return () => {
@@ -111,6 +134,7 @@ export default function App() {
 
   return (
     <div className="app">
+      <AccessibilityBanner />
       <div className="status-bar">
         <span className={`dot ${state}`} />
         <strong style={{ flex: 1 }}>
@@ -167,6 +191,23 @@ export default function App() {
       )}
 
       <LogPanel lines={logs} />
+
+      {fingerprint && (
+        <FingerprintDialog
+          prompt={fingerprint}
+          onAccept={() => {
+            // Phase 4: persist trust to the core's trusted-fingerprints file.
+            // For now we just dismiss; the connection proceeds regardless
+            // because barriers doesn't hard-block on our ack in server mode.
+            setFingerprint(null);
+            setLogs((p) => [
+              ...p,
+              { level: "NOTE", message: "Accepted peer fingerprint (local ack)." },
+            ]);
+          }}
+          onReject={() => setFingerprint(null)}
+        />
+      )}
     </div>
   );
 }

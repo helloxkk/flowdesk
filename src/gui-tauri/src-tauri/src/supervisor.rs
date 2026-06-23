@@ -103,6 +103,8 @@ impl Supervisor {
         if changed {
             log::info!("state -> {:?}", s);
             let _ = app.emit("state://change", s);
+            // Also reflect state onto the system tray tooltip (if present).
+            crate::tray::update_tray_state(app, s);
         }
     }
 

@@ -11,6 +11,8 @@ mod config;
 mod logparse;
 mod settings;
 mod commands;
+mod tray;
+mod macos;
 
 use tauri::Manager;
 
@@ -33,12 +35,27 @@ fn main() {
             commands::get_server_config,
             commands::save_server_config,
             commands::get_local_ips,
+            commands::check_accessibility,
+            commands::request_accessibility,
         ])
         .setup(|app| {
             log::info!("FlowDesk GUI starting");
+
             // Boot the restart dispatcher (one-shot at startup).
             let state: tauri::State<commands::AppState> = app.state();
             state.supervisor.start_dispatcher(app.handle().clone());
+
+            // System tray (menu + icon + click toggle).
+            if let Err(e) = tray::create_tray(app.handle()) {
+                log::warn!("failed to create tray icon: {e}");
+            }
+
+            // Accessibility gate: log current status but do not block — the
+            // frontend will surface a guidance prompt if not trusted.
+            if !macos::is_accessible() {
+                log::warn!("Accessibility permission not granted yet; barriers may fail to capture input");
+            }
+
             Ok(())
         })
         .run(tauri::generate_context!())

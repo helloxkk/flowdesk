@@ -41,3 +41,11 @@ export async function saveServerConfig(config: ServerConfig): Promise<void> {
 export async function getLocalIps(): Promise<string[]> {
   return invoke<string[]>("get_local_ips");
 }
+
+export async function checkAccessibility(): Promise<boolean> {
+  return invoke<boolean>("check_accessibility");
+}
+
+export async function requestAccessibility(): Promise<boolean> {
+  return invoke<boolean>("request_accessibility");
+}

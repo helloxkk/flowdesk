@@ -99,3 +99,13 @@ pub fn get_local_ips() -> Result<Vec<String>, String> {
     }
     Ok(out)
 }
+
+#[tauri::command]
+pub fn check_accessibility() -> bool {
+    crate::macos::is_accessible()
+}
+
+#[tauri::command]
+pub fn request_accessibility() -> bool {
+    crate::macos::prompt_for_access()
+}
