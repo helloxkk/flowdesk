@@ -103,10 +103,15 @@ export default function App() {
       await api.startServer();
     } catch (e) {
       console.error(e);
+      const msg = String(e);
       setLogs((p) => [
         ...p,
-        { level: "ERROR", message: String(e) },
+        { level: "ERROR", message: msg },
       ]);
+      // Permission errors should route the user to the permissions tab.
+      if (msg.includes("permission")) {
+        setTab("permissions");
+      }
     } finally {
       setBusy(false);
       refreshStatus();

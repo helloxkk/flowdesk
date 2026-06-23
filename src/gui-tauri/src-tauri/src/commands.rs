@@ -6,7 +6,7 @@
 
 use std::sync::Arc;
 
-use tauri::State;
+use tauri::{Emitter, State};
 
 use crate::config::ServerConfig;
 use crate::settings::{load_config, save_config, AppConfig};
@@ -33,6 +33,32 @@ pub async fn start_server(
     app: tauri::AppHandle,
     state: State<'_, AppState>,
 ) -> Result<(), String> {
+    // Pre-flight: refuse to launch barriers without the required macOS
+    // permissions. If we spawn barriers anyway, macOS will pop a system
+    // dialog every time (the "FlowDesk 想要控制此电脑" prompt), which the
+    // user perceives as "keeps erroring". Block early with a clear message
+    // instead, and the UI's permissions tab guides them to fix it.
+    #[cfg(target_os = "macos")]
+    {
+        if !crate::macos::is_accessible() {
+            // Emit the permission event so the UI jumps to the permissions tab.
+            let _ = app.emit(
+                "permission://needed",
+                serde_json::json!({ "binary_path": "FlowDesk" }),
+            );
+            return Err(
+                "macOS Accessibility permission is required. Open the 权限 tab to grant it."
+                    .into(),
+            );
+        }
+        if !crate::macos::has_screen_capture() {
+            return Err(
+                "macOS Screen Recording permission is required (macOS 15+). Open the 权限 tab to grant it, then restart FlowDesk."
+                    .into(),
+            );
+        }
+    }
+
     let mut config = load_config().map_err(|e| e.to_string())?;
     // Reconcile the grid so screens length always matches columns × rows
     // before serializing it for barriers to consume.
