@@ -53,3 +53,15 @@ export async function requestAccessibility(): Promise<boolean> {
 export async function openAccessibilitySettings(): Promise<void> {
   await invoke("open_accessibility_settings");
 }
+
+export async function checkScreenCapture(): Promise<boolean> {
+  return invoke<boolean>("check_screen_capture");
+}
+
+export async function requestScreenCapture(): Promise<boolean> {
+  return invoke<boolean>("request_screen_capture");
+}
+
+export async function openScreenRecordingSettings(): Promise<void> {
+  await invoke("open_screen_recording_settings");
+}

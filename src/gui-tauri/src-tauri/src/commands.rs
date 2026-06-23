@@ -114,3 +114,29 @@ pub fn request_accessibility() -> bool {
 pub fn open_accessibility_settings() -> Result<(), String> {
     crate::macos::open_accessibility_settings().map_err(|e| e.to_string())
 }
+
+#[tauri::command]
+pub fn check_screen_capture() -> bool {
+    crate::macos::has_screen_capture()
+}
+
+#[tauri::command]
+pub fn request_screen_capture() -> bool {
+    crate::macos::request_screen_capture()
+}
+
+#[tauri::command]
+pub fn open_screen_recording_settings() -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .arg("x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")
+            .spawn()
+            .map(|_| ())
+            .map_err(|e| e.to_string())
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        Ok(())
+    }
+}

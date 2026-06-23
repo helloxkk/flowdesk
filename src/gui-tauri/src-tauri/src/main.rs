@@ -38,6 +38,9 @@ fn main() {
             commands::check_accessibility,
             commands::request_accessibility,
             commands::open_accessibility_settings,
+            commands::check_screen_capture,
+            commands::request_screen_capture,
+            commands::open_screen_recording_settings,
         ])
         .setup(|app| {
             log::info!("FlowDesk GUI starting");

@@ -504,7 +504,28 @@ pub fn default_binary_path() -> String {
 pub fn resolve_binary<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> String {
     use tauri::Manager;
 
-    // Production: resource_dir()/bin/barriers inside the .app bundle.
+    // Production lookup order (Contents/<dir>/bin/barriers):
+    //   1. Helpers/ — macOS-standard location for bundled helper tools.
+    //      Does NOT cause a second Dock icon (unlike MacOS/, where any
+    //      executable shows up as an app instance).
+    //   2. Resources/ — Tauri's default resources dir; works but doesn't
+    //      inherit Accessibility on its own.
+    //   3. MacOS/ — last resort (causes duplicate Dock icon, avoided).
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(macos_dir) = exe.parent() {
+            // macos_dir = Contents/MacOS; contents_dir = Contents
+            if let Some(contents_dir) = macos_dir.parent() {
+                for sub in ["Helpers", "Resources"] {
+                    let candidate = contents_dir.join(sub).join("bin").join("barriers");
+                    if candidate.exists() {
+                        return candidate.to_string_lossy().into_owned();
+                    }
+                }
+            }
+        }
+    }
+
+    // Fallback: Tauri resource_dir() (Contents/Resources on macOS).
     if let Ok(dir) = app.path().resource_dir() {
         let candidate = dir.join("bin").join("barriers");
         if candidate.exists() {
@@ -512,6 +533,6 @@ pub fn resolve_binary<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> String {
         }
     }
 
-    // Fallback to the static resolver (dev paths, legacy installs).
+    // Dev fallback.
     default_binary_path()
 }

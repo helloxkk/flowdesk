@@ -122,6 +122,55 @@ pub fn prompt_for_access() -> bool {
     inner::is_trusted(true)
 }
 
+// --- Screen Capture permission (macOS 10.15+) ---
+// On macOS 15+ (Sequoia) and later, reading the global mouse position via
+// CGEventGetLocation requires Screen Recording permission in addition to
+// Accessibility. Without it, barriers can capture keyboard + clicks but NOT
+// mouse motion — which reads as "slow / drops frames" to the user.
+
+#[cfg(target_os = "macos")]
+mod screen_capture {
+    use std::os::raw::c_int;
+
+    extern "C" {
+        // CoreGraphics (ApplicationServices). Returns true if the calling
+        // process already has Screen Recording permission (10.15+).
+        fn CGPreflightScreenCaptureAccess() -> c_int;
+        // Triggers the system consent prompt if not yet granted (10.15+).
+        fn CGRequestScreenCaptureAccess() -> c_int;
+    }
+
+    /// Does the process already have Screen Recording permission?
+    pub fn preflight() -> bool {
+        unsafe { CGPreflightScreenCaptureAccess() != 0 }
+    }
+
+    /// Request Screen Recording permission (may open System Settings).
+    /// Returns whether permission is granted *now* (may be false until the
+    /// user grants it and the app is restarted).
+    pub fn request() -> bool {
+        unsafe { CGRequestScreenCaptureAccess() != 0 }
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+mod screen_capture {
+    pub fn preflight() -> bool { true }
+    pub fn request() -> bool { true }
+}
+
+/// Does the barriers subprocess (which inherits our bundle's permissions)
+/// have Screen Recording permission? On macOS 15+ this is required for
+/// mouse-motion capture alongside Accessibility.
+pub fn has_screen_capture() -> bool {
+    screen_capture::preflight()
+}
+
+/// Request Screen Recording permission (opens System Settings if needed).
+pub fn request_screen_capture() -> bool {
+    screen_capture::request()
+}
+
 /// Open System Settings directly to the Privacy & Security → Accessibility
 /// pane. Uses `open` on the special URL scheme; more reliable than the JS
 /// opener plugin for macOS-specific schemes.
