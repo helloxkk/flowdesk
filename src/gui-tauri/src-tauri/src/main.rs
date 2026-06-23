@@ -37,6 +37,7 @@ fn main() {
             commands::get_local_ips,
             commands::check_accessibility,
             commands::request_accessibility,
+            commands::open_accessibility_settings,
         ])
         .setup(|app| {
             log::info!("FlowDesk GUI starting");

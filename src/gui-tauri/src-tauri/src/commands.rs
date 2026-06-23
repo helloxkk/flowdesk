@@ -109,3 +109,8 @@ pub fn check_accessibility() -> bool {
 pub fn request_accessibility() -> bool {
     crate::macos::prompt_for_access()
 }
+
+#[tauri::command]
+pub fn open_accessibility_settings() -> Result<(), String> {
+    crate::macos::open_accessibility_settings().map_err(|e| e.to_string())
+}

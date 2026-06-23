@@ -211,10 +211,13 @@ impl Supervisor {
                         let g = this_stderr.inner.lock().unwrap();
                         g.binary_path.clone().unwrap_or_else(|| "barriers".to_string())
                     };
-                    let _ = app_stderr.emit(
+                    match app_stderr.emit(
                         "permission://needed",
                         serde_json::json!({ "binary_path": binary_path }),
-                    );
+                    ) {
+                        Ok(()) => log::info!("emitted permission://needed for {}", binary_path),
+                        Err(e) => log::error!("failed to emit permission://needed: {e}"),
+                    }
                     continue;
                 }
 

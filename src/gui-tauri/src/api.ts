@@ -49,3 +49,7 @@ export async function checkAccessibility(): Promise<boolean> {
 export async function requestAccessibility(): Promise<boolean> {
   return invoke<boolean>("request_accessibility");
 }
+
+export async function openAccessibilitySettings(): Promise<void> {
+  await invoke("open_accessibility_settings");
+}

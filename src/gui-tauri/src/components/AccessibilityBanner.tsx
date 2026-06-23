@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
-import { openUrl } from "@tauri-apps/plugin-opener";
 import * as api from "../api";
 
 /**
@@ -68,11 +67,7 @@ export function AccessibilityBanner() {
         </code>
       </span>
       <button
-        onClick={() =>
-          openUrl(
-            "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
-          )
-        }
+        onClick={() => api.openAccessibilitySettings()}
         style={{ background: "white", color: "var(--warning)", flexShrink: 0 }}
       >
         打开系统设置

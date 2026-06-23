@@ -121,3 +121,19 @@ pub fn is_accessible() -> bool {
 pub fn prompt_for_access() -> bool {
     inner::is_trusted(true)
 }
+
+/// Open System Settings directly to the Privacy & Security → Accessibility
+/// pane. Uses `open` on the special URL scheme; more reliable than the JS
+/// opener plugin for macOS-specific schemes.
+#[cfg(target_os = "macos")]
+pub fn open_accessibility_settings() -> std::io::Result<()> {
+    std::process::Command::new("open")
+        .arg("x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
+        .spawn()
+        .map(|_| ())
+}
+
+#[cfg(not(target_os = "macos"))]
+pub fn open_accessibility_settings() -> std::io::Result<()> {
+    Ok(())
+}
