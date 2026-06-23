@@ -170,6 +170,7 @@ impl Supervisor {
         // Stderr reader: macOS emits some unavoidable framework noise when
         // barriers runs headless (no app bundle). Filter those out so the log
         // window stays readable; surface genuinely useful warnings.
+        let this_stderr = Arc::clone(self);
         tauri::async_runtime::spawn(async move {
             let mut reader = BufReader::new(stderr).lines();
             let mut cursor_warned = false;
@@ -189,18 +190,30 @@ impl Supervisor {
 
                 // "cursor may not be visible" repeats forever when barriers
                 // can't grab the pointer — almost always a missing macOS
-                // Accessibility grant for the GUI. Emit it once with guidance
-                // instead of spamming every 3s.
+                // Accessibility grant for the BARRIERS subprocess (not the GUI
+                // itself; CGEventTap permission is per-process). Emit it once,
+                // surface a dedicated permission prompt carrying the binary path
+                // so the frontend can show actionable guidance.
                 if line.contains("cursor may not be visible") {
                     if cursor_warned {
                         continue;
                     }
                     cursor_warned = true;
-                    let msg = "cursor capture failed — grant FlowDesk Accessibility permission in System Settings → Privacy & Security";
+                    let msg = "cursor capture failed — the barriers process needs macOS Accessibility permission";
                     log::warn!("{}", msg);
                     let _ = app_stderr.emit(
                         "log://line",
                         serde_json::json!({"level": "WARNING", "message": msg}),
+                    );
+                    // Tell the frontend to show the permission banner with the
+                    // exact binary path the user must authorize.
+                    let binary_path = {
+                        let g = this_stderr.inner.lock().unwrap();
+                        g.binary_path.clone().unwrap_or_else(|| "barriers".to_string())
+                    };
+                    let _ = app_stderr.emit(
+                        "permission://needed",
+                        serde_json::json!({ "binary_path": binary_path }),
                     );
                     continue;
                 }
