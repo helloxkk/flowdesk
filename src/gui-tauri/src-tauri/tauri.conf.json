@@ -46,10 +46,7 @@
     "longDescription": "FlowDesk — software KVM utility, a fork of Barrier.",
     "macOS": {
       "minimumSystemVersion": "10.15",
-      "infoPlist": "Info.plist",
-      "files": {
-        "Helpers/bin/barriers": "../../../build/flowdesk-helper/bin/barriers"
-      }
+      "infoPlist": "Info.plist"
     }
   }
 }

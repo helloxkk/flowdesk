@@ -43,7 +43,10 @@ if [[ "$HOST_OS" == "Darwin" ]]; then
     )
 
     if [[ "$BARRIER_ARCH" == "x86_64" ]]; then
-        OPENSSL_LIB="/usr/local/opt/openssl/lib/libssl.a"
+        # Allow overriding the OpenSSL location via env var; otherwise probe
+        # the standard x86_64 Homebrew path.
+        OPENSSL_ROOT="${FLOWDESK_OPENSSL_ROOT:-/usr/local/opt/openssl}"
+        OPENSSL_LIB="$OPENSSL_ROOT/lib/libssl.a"
         if [[ ! -f "$OPENSSL_LIB" ]] || ! lipo -archs "$OPENSSL_LIB" 2>/dev/null | grep -qw x86_64; then
             LEGACY_BARRIER="/Applications/Barrier.app/Contents/MacOS/barriers"
             if [[ -f "$LEGACY_BARRIER" ]] && lipo -archs "$LEGACY_BARRIER" 2>/dev/null | grep -qw x86_64; then
@@ -64,6 +67,12 @@ EOF
             fi
         fi
     fi
+fi
+
+# Pass OpenSSL location to cmake/barrier's CMakeLists (it probes standard
+# Homebrew paths; for non-standard locations set OPENSSL_ROOT_DIR env).
+if [[ -n "${OPENSSL_ROOT:-}" && -d "$OPENSSL_ROOT" ]]; then
+    export OPENSSL_ROOT_DIR="$OPENSSL_ROOT"
 fi
 
 cmake "${CMAKE_ARGS[@]}"

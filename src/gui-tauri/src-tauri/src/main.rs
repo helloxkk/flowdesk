@@ -17,7 +17,28 @@ mod macos;
 use tauri::Manager;
 
 fn main() {
-    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
+    // Log to a file so we can debug GUI-launched (double-click) runs, where
+    // stdout isn't captured by any terminal. The file lives under the app's
+    // data dir alongside config.json.
+    let log_path = dirs::data_dir()
+        .unwrap_or_else(|| std::path::PathBuf::from("."))
+        .join("com.flowdesk.app")
+        .join("flowdesk.log");
+    let _ = std::fs::create_dir_all(log_path.parent().unwrap_or(std::path::Path::new(".")));
+
+    // Mark each run with a header so the file is easy to read.
+    if let Ok(mut f) = std::fs::OpenOptions::new().append(true).create(true).open(&log_path) {
+        use std::io::Write;
+        let secs = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
+        let _ = writeln!(f, "\n=== FlowDesk run @ unix{} ===", secs);
+    }
+
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
+        .target(env_logger::Target::Stderr)
+        .init();
 
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())

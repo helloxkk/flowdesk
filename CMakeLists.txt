@@ -344,6 +344,17 @@ elseif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
             ${OPENSSL_ROOT}/lib/libcrypto.a
             z
         )
+    elseif (DEFINED ENV{FLOWDESK_OPENSSL_ROOT} AND IS_DIRECTORY "$ENV{FLOWDESK_OPENSSL_ROOT}")
+        # FlowDesk: allow overriding the OpenSSL location via env var (used
+        # for cross-arch builds where the default brew path is the wrong arch).
+        set (OPENSSL_ROOT $ENV{FLOWDESK_OPENSSL_ROOT})
+
+        include_directories (BEFORE SYSTEM ${OPENSSL_ROOT}/include)
+
+        set (OPENSSL_LIBS
+            ${OPENSSL_ROOT}/lib/libssl.a
+            ${OPENSSL_ROOT}/lib/libcrypto.a
+        )
     elseif (IS_DIRECTORY /usr/local/opt/openssl AND BREW_PROGRAM)
         # brew
         set (OPENSSL_ROOT /usr/local/opt/openssl)
