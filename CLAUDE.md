@@ -9,9 +9,14 @@ computers over the network. It is a fork of [Barrier](https://github.com/debauch
 (GPLv2), which itself was forked from Symless's Synergy 1.9 codebase.
 
 - **License:** GPLv2, with the OpenSSL exemption stated at the top of [`LICENSE`](LICENSE).
-- **Language:** C++14 (`CMAKE_CXX_STANDARD 14`, no extensions).
-- **Build system:** CMake ≥ 3.4 (`CMakeLists.txt` at repo root, `project(barrier)`).
-- **Qt version:** Qt 5 (GUI). GUI is optional via `-DBARRIER_BUILD_GUI=OFF`.
+- **C++ core:** C++14 (`CMAKE_CXX_STANDARD 14`, no extensions).
+- **C++ build:** CMake ≥ 3.4 (`CMakeLists.txt` at repo root, `project(barrier)`).
+- **Qt5 GUI (legacy):** `src/gui/` — being **replaced** by the Tauri GUI.
+- **Tauri GUI (new):** `src/gui-tauri/` — Rust backend + React frontend. See
+  [`docs/design/tauri-gui.md`](docs/design/tauri-gui.md) for the full design.
+  The C++ core binaries (`barriers`/`barrierc`) are **not modified** — the new GUI
+  spawns them as subprocesses and supervises via stdout/stdin. macOS does **not**
+  use the IPC protocol (that's Windows service mode only).
 
 ## Critical: license compliance (read before editing)
 
