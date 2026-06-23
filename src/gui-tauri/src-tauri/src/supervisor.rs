@@ -65,7 +65,7 @@ struct Inner {
     /// Send a value to interrupt the auto-restart loop (set on stop()).
     cancel: Option<oneshot::Sender<()>>,
     /// Handle into the auto-restart watcher task so we can await it on stop.
-    watcher: Option<tokio::task::JoinHandle<()>>,
+    watcher: Option<tauri::async_runtime::JoinHandle<()>>,
     /// The barriers binary path used for the last launch.
     binary_path: Option<String>,
     /// Channel into the restart dispatcher. None until start_dispatcher() is called.
@@ -157,7 +157,7 @@ impl Supervisor {
         let app_stdout = app.clone();
         let app_stderr = app.clone();
         // Stdout reader: parse log lines, emit events, drive state.
-        tokio::spawn(async move {
+        tauri::async_runtime::spawn(async move {
             let app_exit = app_stdout.clone();
             let mut reader = BufReader::new(stdout).lines();
             while let Ok(Some(line)) = reader.next_line().await {
@@ -167,10 +167,44 @@ impl Supervisor {
             this.on_child_exit(&app_exit).await;
         });
 
-        // Stderr reader: just mirror to our log window (rare on macOS).
-        tokio::spawn(async move {
+        // Stderr reader: macOS emits some unavoidable framework noise when
+        // barriers runs headless (no app bundle). Filter those out so the log
+        // window stays readable; surface genuinely useful warnings.
+        tauri::async_runtime::spawn(async move {
             let mut reader = BufReader::new(stderr).lines();
+            let mut cursor_warned = false;
             while let Ok(Some(line)) = reader.next_line().await {
+                // Drop the known macOS headless-mode framework chatter:
+                //  - "[WindowTab] Cannot index window tabs due to missing main bundle identifier"
+                //  - "-[NSWindow makeKeyWindow] called on <NSWindow ...>"
+                //  - "starting cocoa loop"
+                // These are emitted because barriers is a CLI binary without a
+                // main bundle; they don't affect functionality.
+                if line.contains("missing main bundle identifier")
+                    || line.contains("makeKeyWindow")
+                    || line.contains("starting cocoa loop")
+                {
+                    continue;
+                }
+
+                // "cursor may not be visible" repeats forever when barriers
+                // can't grab the pointer — almost always a missing macOS
+                // Accessibility grant for the GUI. Emit it once with guidance
+                // instead of spamming every 3s.
+                if line.contains("cursor may not be visible") {
+                    if cursor_warned {
+                        continue;
+                    }
+                    cursor_warned = true;
+                    let msg = "cursor capture failed — grant FlowDesk Accessibility permission in System Settings → Privacy & Security";
+                    log::warn!("{}", msg);
+                    let _ = app_stderr.emit(
+                        "log://line",
+                        serde_json::json!({"level": "WARNING", "message": msg}),
+                    );
+                    continue;
+                }
+
                 log::warn!("barriers stderr: {}", line);
                 let _ = app_stderr.emit(
                     "log://line",
@@ -187,12 +221,16 @@ impl Supervisor {
     /// from the channel and invokes `start` — this indirection breaks what
     /// would otherwise be a compile-time recursion cycle between `start` and
     /// `on_child_exit`.
+    ///
+    /// Uses `tauri::async_runtime::spawn` (not `tauri::async_runtime::spawn`) so it runs on
+    /// Tauri's managed runtime — the setup hook is synchronous and has no
+    /// ambient Tokio runtime context of its own.
     pub fn start_dispatcher(self: &Arc<Self>, app: AppHandle) {
         let (tx, mut rx) = mpsc::unbounded_channel::<RestartRequest>();
         self.inner.lock().unwrap().restart_tx = Some(tx);
 
         let this = Arc::clone(self);
-        tokio::spawn(async move {
+        tauri::async_runtime::spawn(async move {
             while let Some(req) = rx.recv().await {
                 match req {
                     RestartRequest::Launch { config, binary, config_path } => {
@@ -269,7 +307,7 @@ impl Supervisor {
         }
         let this = Arc::clone(self);
         let app2 = app.clone();
-        let handle = tokio::spawn(async move {
+        let handle = tauri::async_runtime::spawn(async move {
             tokio::select! {
                 _ = tokio::time::sleep(AUTO_RESTART_DELAY) => {
                     let still_wanted = this.inner.lock().unwrap().wanted;
